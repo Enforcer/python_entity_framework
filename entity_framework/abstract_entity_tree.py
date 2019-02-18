@@ -182,11 +182,7 @@ def build(root: typing.Type[Entity]) -> AbstractEntityTree:
             field_type = field.type
             field_name = field.name
 
-            if _is_nested_entity_or_vo(field_type):
-                node_children.append(parse_node(field_type, field_name))
-                continue
-
-            if _is_list_of_entities_or_vos(field.type):
+            if _is_nested_entity_or_vo(field_type) or _is_list_of_entities_or_vos(field_type):
                 node_children.append(parse_node(field_type, field_name))
                 continue
 
