@@ -20,7 +20,13 @@ def test_entity_enforces_identity():
 
 
 def test_entity_allows_multiple_identities():
-    raise pytest.skip("Not implemented yet!")
+    class WithDoubleIdentity(Entity):
+        id: Identity[int]
+        second_id: Identity[int]
+
+    entity = WithDoubleIdentity(1, 2)
+    assert entity.id == 1
+    assert entity.second_id == 2
 
 
 def test_value_object_without_identity():
