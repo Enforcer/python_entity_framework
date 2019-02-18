@@ -44,6 +44,12 @@ def _is_list_of_entities_or_vos(field_type: typing.Type) -> bool:
 
 
 class Visitor:
+    def traverse_from(self, node: "Node") -> None:
+        node.accept(self)
+        for child in node.children:
+            self.traverse_from(child)
+        node.farewell(self)
+
     def visit_field(self, field: "Field") -> None:
         pass
 
