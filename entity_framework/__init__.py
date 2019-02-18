@@ -11,8 +11,8 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.dialects import postgresql as postgresql_dialect
 
 # TODO: add __all__
-# from entity_framework.entity import Entity, Identity, ValueObject
-# from entity_framework.repository import Repository, Registry
+from entity_framework.entity import Entity, Identity, ValueObject
+from entity_framework.repository import Repository, Registry
 
 
 def create_model_cls(base: declarative_base, entity_cls: typing.Type):

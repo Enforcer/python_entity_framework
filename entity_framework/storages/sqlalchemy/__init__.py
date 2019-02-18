@@ -9,7 +9,7 @@ from sqlalchemy.ext.declarative import DeclarativeMeta
 from entity_framework.entity import Entity, ValueObject
 from entity_framework.abstract_entity_tree import (
     AbstractEntityTree,
-    _is_nullable_nested_entity_or_vo,
+    _is_nullable_entity_or_vo,
     _get_wrapped_type,
     _is_list_of_entities_or_vos,
     _is_generic,
@@ -57,7 +57,7 @@ class SqlAlchemyRepo:
                 # TODO: attach 'virtual' identities, keep mapping under repository using Weak Dictionary
                 pass
             else:
-                raise Exception(f'Unsupported type on nested list - {nested_list_item_type}')
+                raise Exception(f"Unsupported type on nested list - {nested_list_item_type}")
 
         return type(model_cls_name, model_bases, namespace)
 
@@ -70,7 +70,7 @@ class SqlAlchemyRepo:
             values = {}
             for field_name, field in attr.fields_dict(entity_cls).items():
                 field_type = field.type
-                if _is_nullable_nested_entity_or_vo(field):
+                if _is_nullable_entity_or_vo(field):
                     field_type = _get_wrapped_type(field)
 
                 if _is_generic(field) and _is_list_of_entities_or_vos(field):

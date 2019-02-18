@@ -4,120 +4,74 @@ import typing
 from collections import deque
 
 import attr
+import inflection
 
-from entity_framework.entity import Entity, Identity, ValueObject, EntityOrVo
+from entity_framework.entity import Entity, Identity, ValueObject, EntityOrVo, EntityOrVoType
 
 
-# @attr.s(auto_attribs=True)
-# class AbstractEntityTree:
-#     fields: typing.Dict[str, typing.Type] = attr.Factory(dict)
-#     identity: typing.List[str] = attr.Factory(list)
-#     nullables: typing.List[str] = attr.Factory(list)
-#     nested_lists: typing.Dict[str, typing.Type] = attr.Factory(dict)
-#
-#
-# def build(root: Entity) -> AbstractEntityTree:
-#     aet = AbstractEntityTree()
-#     nesteds: typing.Deque[typing.Tuple[attr.Attribute, str]] = deque()
-#
-#     def parse_fields(current_root: EntityOrVo, prefix: str = "", force_nullable=False) -> None:
-#         for field in attr.fields(current_root):
-#             field_type = field.type
-#             field_name = f"{prefix}{field.name}"
-#
-#             if _is_nested_entity_or_vo(field):
-#                 nesteds.append((field, f"{field_name}_"))
-#                 continue
-#
-#             if _is_generic(field):
-#                 if Identity.is_identity(field):
-#                     field_type = _get_wrapped_type(field)
-#                     if not prefix:
-#                         aet.identity.append(field_name)
-#                 elif _is_field_nullable(field):
-#                     field_type = _get_wrapped_type(field)
-#                     aet.nullables.append(field_name)
-#                 elif _is_list_of_entities_or_vos(field):
-#                     aet.nested_lists[field_name] = _get_wrapped_type(field)
-#                     continue
-#                 else:
-#                     raise Exception(f"Unhandled generic type - {field_type}")
-#
-#             if force_nullable and not field_name in aet.nullables:
-#                 aet.nullables.append(field_name)
-#
-#             aet.fields[field_name] = field_type
-#
-#     parse_fields(root)
-#
-#     while nesteds:
-#         field, prefix = nesteds.popleft()
-#         field_type = field.type
-#         force_nullable = False
-#         if _is_nullable_nested_entity_or_vo(field):
-#             field_type = _get_wrapped_type(field)
-#             force_nullable = True
-#         parse_fields(field_type, prefix, force_nullable)
-#
-#     return aet
-#
-#
-# def _is_generic(field: attr.Attribute) -> bool:
-#     return hasattr(field.type, "__origin__")
-#
-#
-# def _get_wrapped_type(field: attr.Attribute) -> typing.Type:
-#     return field.type.__args__[0]
-#
-#
-# def _is_field_nullable(field: attr.Attribute) -> bool:
-#     return field.type.__origin__ == typing.Union and isinstance(None, field.type.__args__[1])
-#
-#
-# def _is_nested_entity_or_vo(field: attr.Attribute) -> bool:
-#     return issubclass(field.type, (Entity, ValueObject)) or _is_nullable_nested_entity_or_vo(field)
-#
-#
-# def _is_nullable_nested_entity_or_vo(field: attr.Attribute) -> bool:
-#     if _is_generic(field) and _is_field_nullable(field):
-#         return issubclass(_get_wrapped_type(field), (Entity, ValueObject))
-#     return False
-#
-#
-# def _is_list_of_entities_or_vos(field: attr.Attribute) -> bool:
-#     return field.type.__origin__ == typing.List and issubclass(_get_wrapped_type(field), (Entity, ValueObject))
+def _is_generic(field_type: typing.Type) -> bool:
+    return hasattr(field_type, "__origin__")
+
+
+def _get_wrapped_type(wrapped_type: typing.Optional) -> typing.Type:
+    return wrapped_type.__args__[0]
+
+
+def _is_field_nullable(field_type: typing.Type) -> bool:
+    return field_type.__origin__ == typing.Union and isinstance(None, field_type.__args__[1])
+
+
+def _is_nested_entity_or_vo(field_type: typing.Type) -> bool:
+    return issubclass(field_type, (Entity, ValueObject)) or _is_nullable_entity_or_vo(field_type)
+
+
+def _is_nullable_entity_or_vo(field_type: typing.Type) -> bool:
+    if _is_generic(field_type) and _is_field_nullable(field_type):
+        return issubclass(_get_wrapped_type(field_type), (Entity, ValueObject))
+    return False
+
+
+def _is_identity(field_type: typing.Type) -> bool:
+    return getattr(field_type, "__origin__", None) == Identity
+
+
+def _is_list_of_entities_or_vos(field_type: typing.Type) -> bool:
+    return (
+        _is_generic(field_type)
+        and field_type.__origin__ == typing.List
+        and issubclass(_get_wrapped_type(field_type), (Entity, ValueObject))
+    )
 
 
 class Visitor:
-
-    def visit_field(self, field: 'Field') -> None:
+    def visit_field(self, field: "Field") -> None:
         pass
 
-    def leave_field(self, field: 'Field') -> None:
+    def leave_field(self, field: "Field") -> None:
         pass
 
-    def visit_nested_entity(self, nested_entity: 'NestedEntity') -> None:
+    def visit_nested_entity(self, nested_entity: "EntityNode") -> None:
         pass
 
-    def leave_nested_entity(self, nested_entity: 'NestedEntity') -> None:
+    def leave_nested_entity(self, nested_entity: "EntityNode") -> None:
         pass
 
-    def visit_nested_value_object(self, nested_entity: 'NestedValueObject') -> None:
+    def visit_nested_value_object(self, nested_entity: "ValueObjectNode") -> None:
         pass
 
-    def leave_nested_value_object(self, nested_entity: 'NestedValueObject') -> None:
+    def leave_nested_value_object(self, nested_entity: "ValueObjectNode") -> None:
         pass
 
-    def visit_list_of_entities(self, list_of_entities: 'ListOfEntities') -> None:
+    def visit_list_of_entities(self, list_of_entities: "ListOfEntitiesNode") -> None:
         pass
 
-    def leave_list_of_entities(self, list_of_entities: 'ListOfEntities') -> None:
+    def leave_list_of_entities(self, list_of_entities: "ListOfEntitiesNode") -> None:
         pass
 
-    def visit_list_of_value_objects(self, list_of_entities: 'ListOfValueObjects') -> None:
+    def visit_list_of_value_objects(self, list_of_entities: "ListOfValueObjectsNode") -> None:
         pass
 
-    def leave_list_of_value_objects(self, list_of_entities: 'ListOfValueObjects') -> None:
+    def leave_list_of_value_objects(self, list_of_entities: "ListOfValueObjectsNode") -> None:
         pass
 
 
@@ -130,9 +84,10 @@ class NodeMeta(type):
 
 
 class Node(metaclass=NodeMeta):
+    name: str
     type: typing.Type
-    nullable: bool
-    children: typing.List['Node']
+    nullable: bool = False
+    children: typing.List["Node"] = attr.Factory(list)
 
     @abc.abstractmethod
     def accept(self, visitor: Visitor) -> None:
@@ -143,8 +98,8 @@ class Node(metaclass=NodeMeta):
         pass
 
 
-class Field(Node):
-    is_identity: bool
+class FieldNode(Node):
+    is_identity: bool = False
 
     def accept(self, visitor: Visitor) -> None:
         visitor.visit_field(self)
@@ -153,8 +108,7 @@ class Field(Node):
         visitor.leave_field(self)
 
 
-class NestedEntity(Node):
-
+class EntityNode(Node):
     def accept(self, visitor: Visitor) -> None:
         visitor.visit_nested_entity(self)
 
@@ -162,8 +116,7 @@ class NestedEntity(Node):
         visitor.leave_nested_entity(self)
 
 
-class NestedValueObject(Node):
-
+class ValueObjectNode(Node):
     def accept(self, visitor: Visitor) -> None:
         visitor.visit_nested_value_object(self)
 
@@ -171,8 +124,7 @@ class NestedValueObject(Node):
         visitor.leave_nested_value_object(self)
 
 
-class ListOfEntities(Node):
-
+class ListOfEntitiesNode(Node):
     def accept(self, visitor: Visitor) -> None:
         visitor.visit_list_of_entities(self)
 
@@ -180,8 +132,7 @@ class ListOfEntities(Node):
         visitor.leave_list_of_entities(self)
 
 
-class ListOfValueObjects(Node):
-
+class ListOfValueObjectsNode(Node):
     def accept(self, visitor: Visitor) -> None:
         visitor.visit_list_of_value_objects(self)
 
@@ -191,5 +142,71 @@ class ListOfValueObjects(Node):
 
 @attr.s(auto_attribs=True)
 class AbstractEntityTree:
-    root: Node
+    root: EntityNode
 
+    def __iter__(self) -> typing.Generator[Node, None, None]:
+        def iterate_dfs() -> typing.Generator[Node, None, None]:
+            nodes_left: typing.Deque[Node] = deque([self.root])
+
+            while nodes_left:
+                current = nodes_left.pop()
+                yield current
+                nodes_left.extend(current.children[::-1])
+
+        return iterate_dfs()
+
+
+def build(root: typing.Type[Entity]) -> AbstractEntityTree:
+    def parse_node(current_root: EntityOrVoType, name: str) -> Node:
+        node_name = name
+        is_list = False
+        if _is_list_of_entities_or_vos(current_root):
+            node_nullable = False
+            node_type = _get_wrapped_type(current_root)
+            is_list = True
+        elif _is_nullable_entity_or_vo(current_root):
+            node_nullable = True
+            node_type = _get_wrapped_type(current_root)
+        else:
+            node_nullable = False
+            node_type = current_root
+        node_children = []
+
+        for field in attr.fields(node_type):
+            field_type = field.type
+            field_name = field.name
+
+            if _is_nested_entity_or_vo(field_type):
+                node_children.append(parse_node(field_type, field_name))
+                continue
+
+            if _is_list_of_entities_or_vos(field.type):
+                node_children.append(parse_node(field_type, field_name))
+                continue
+
+            field_nullable = False
+            is_identity = False
+
+            if _is_generic(field.type):
+                if _is_identity(field_type):
+                    field_type = _get_wrapped_type(field.type)
+                    is_identity = True
+                elif _is_field_nullable(field.type):
+                    field_type = _get_wrapped_type(field.type)
+                    field_nullable = True
+                else:
+                    raise Exception(f"Unhandled Generic type - {field_type}")
+
+            node_children.append(FieldNode(field_name, field_type, field_nullable, [], is_identity))
+
+        if issubclass(node_type, Entity):
+            if is_list:
+                return ListOfEntitiesNode(node_name, node_type, node_nullable, node_children)
+            return EntityNode(node_name, node_type, node_nullable, node_children)
+
+        if is_list:
+            return ListOfValueObjectsNode(node_name, node_type, node_nullable, node_children)
+        return ValueObjectNode(node_name, node_type, node_nullable, node_children)
+
+    root_node = parse_node(root, inflection.underscore(root.__name__))
+    return AbstractEntityTree(root_node)
