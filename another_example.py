@@ -27,6 +27,7 @@ class Subscriber(Entity):
     id: Identity[SubscriberId]
     current_subscription: Optional[Subscription]
     lifetime_subscription: Optional[Subscription]
+    plan: Plan
 
     def subscribe(self, subscription: Subscription) -> None:
         if not self.current_subscription:
@@ -45,9 +46,10 @@ class SqlSubscriberRepo(SqlAlchemyRepo, SubscriberRepo):
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 engine = create_engine('postgresql://postgres:dbpasswd@localhost:5432/plays', echo=True)
-Base.metadata.drop_all(engine)
+# Base.metadata.drop_all(engine)
 Base.metadata.create_all(engine)
 Session = sessionmaker(engine)
 
-# repo = SqlSubscriberRepo(Session())
+repo = SqlSubscriberRepo(Session())
+repo.get(1)
 # repo.save(Subscriber(1, None, None))

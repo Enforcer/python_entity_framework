@@ -41,7 +41,6 @@ class RepositoryMeta(typing.GenericMeta):
 
 
 class ReadOnlyRepository(typing.Generic[EntityType, IdentityType], metaclass=RepositoryMeta):
-
     @classmethod
     @abc.abstractmethod
     def prepare(self) -> None:
@@ -53,7 +52,6 @@ class ReadOnlyRepository(typing.Generic[EntityType, IdentityType], metaclass=Rep
 
 
 class Repository(typing.Generic[EntityType, IdentityType], metaclass=RepositoryMeta):
-
     @classmethod
     @abc.abstractmethod
     def prepare(self) -> None:

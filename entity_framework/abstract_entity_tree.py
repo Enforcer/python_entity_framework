@@ -50,10 +50,10 @@ class Visitor:
             self.traverse_from(child)
         node.farewell(self)
 
-    def visit_field(self, field: "Field") -> None:
+    def visit_field(self, field: "FieldNode") -> None:
         pass
 
-    def leave_field(self, field: "Field") -> None:
+    def leave_field(self, field: "FieldNode") -> None:
         pass
 
     def visit_entity(self, entity: "EntityNode") -> None:
