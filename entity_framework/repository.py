@@ -2,20 +2,8 @@ import abc
 import inspect
 import typing
 
-import attr
-
 from entity_framework.abstract_entity_tree import AbstractEntityTree, build
 from entity_framework.entity import EntityOrVoType
-
-
-@attr.s(auto_attribs=True)
-class Registry:
-    # TODO: delete if unnecessary
-    """
-    Keeps track of models created for entities/value objects. Usually, one creates one registry for the entire app.
-    Multiple registries might become handy in tests or when one wants to support multiple databases.
-    """
-    entities_to_models: typing.Dict[EntityOrVoType, typing.Any] = attr.Factory(dict)
 
 
 EntityType = typing.TypeVar("EntityType")
@@ -53,7 +41,6 @@ class RepositoryMeta(typing.GenericMeta):
 
 
 class ReadOnlyRepository(typing.Generic[EntityType, IdentityType], metaclass=RepositoryMeta):
-    registry: Registry = None
 
     @classmethod
     @abc.abstractmethod
@@ -66,7 +53,6 @@ class ReadOnlyRepository(typing.Generic[EntityType, IdentityType], metaclass=Rep
 
 
 class Repository(typing.Generic[EntityType, IdentityType], metaclass=RepositoryMeta):
-    registry: Registry = None
 
     @classmethod
     @abc.abstractmethod

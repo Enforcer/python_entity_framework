@@ -1,16 +1,16 @@
 import typing
+from collections import defaultdict
 
 import attr
 import inflection
-from sqlalchemy import Column
-from sqlalchemy.orm import Session
+from sqlalchemy import Column, ForeignKey
+from sqlalchemy.orm import Session, Query, joinedload, relationship
 from sqlalchemy.ext.declarative import DeclarativeMeta
 
 from entity_framework.entity import Entity, ValueObject
 from entity_framework.abstract_entity_tree import (
     AbstractEntityTree,
     Visitor,
-    Node,
     FieldNode,
     EntityNode,
     ValueObjectNode,
@@ -34,8 +34,15 @@ class RawModel:
     def append_column(self, name: str, column: Column) -> None:
         self.namespace[name] = column
 
+    def append_relationship(self, name: str, related_model_name: str, nullable: bool) -> None:
+        self.namespace[name] = relationship(related_model_name, innerjoin=not nullable)
+
     def materialize(self) -> typing.Type:
         return type(self.name, self.bases, self.namespace)
+
+
+class Registry:
+    entities_models: typing.Dict[typing.Type[Entity], typing.Type[DeclarativeMeta]] = {}
 
 
 class ModelBuildingVisitor(Visitor):
@@ -62,19 +69,38 @@ class ModelBuildingVisitor(Visitor):
         pass
 
     def visit_entity(self, entity: "EntityNode") -> None:
-        self._entities_stack.append(entity)
         if entity.type in self._entities_raw_models:
             raise NotImplementedError("Probably recursive, not supported")
 
+        model_name = f"{entity.type.__name__}Model"
         table_name = inflection.pluralize(inflection.underscore(entity.type.__name__))
+
+        if self._entities_stack:  # nested, include foreign key
+            identity_nodes: typing.List[FieldNode] = [
+                node for node in entity.children if getattr(node, 'is_identity', None)
+            ]
+            assert len(identity_nodes) == 1, 'Multiple primary keys not supported'
+            identity_node = identity_nodes.pop()
+            raw_model: RawModel = self._entities_raw_models[self.current_entity.type]
+            raw_model.append_column(
+                f"{entity.name}_{identity_node.name}",
+                Column(
+                    native_type_to_column.convert(identity_node.type),
+                    ForeignKey(f"{table_name}.{identity_node.name}"),
+                    nullable=entity.nullable
+                )
+            )
+            raw_model.append_relationship(entity.name, model_name, entity.nullable)
+
+        self._entities_stack.append(entity)
         self._entities_raw_models[entity.type] = RawModel(
-            name=f"{entity.type.__name__}Model", bases=(self._base,), namespace={"__tablename__": table_name}
+            name=model_name, bases=(self._base,), namespace={"__tablename__": table_name}
         )
 
     def leave_entity(self, entity: "EntityNode") -> None:
         entity_node = self._entities_stack.pop()
         raw_model: RawModel = self._entities_raw_models[entity_node.type]
-        raw_model.materialize()
+        Registry.entities_models[entity.type] = raw_model.materialize()
 
     def visit_value_object(self, value_object: "ValueObjectNode") -> None:
         # value objects' fields are embedded into entity above it
@@ -96,6 +122,41 @@ class ModelBuildingVisitor(Visitor):
         raise NotImplementedError
 
 
+class QueryBuildingVisitor(Visitor):
+
+    def __init__(self) -> None:
+        self._root_model: typing.Optional[typing.Type] = None
+        self._models_stack: typing.List[typing.Type] = []
+        self._models_to_join: typing.DefaultDict[typing.Type, typing.List[str]] = defaultdict(list)
+        self._all_models: typing.Set[typing.Type] = set()
+        self._query: typing.Optional[Query] = None
+
+    @property
+    def query(self) -> Query:
+        if not self._root_model:
+            raise Exception('No root model')
+
+        return Query(self._root_model).options(
+            joinedload(getattr(self._root_model, rel_name))
+            for rel_name in self._models_to_join[self._root_model]
+        )
+
+    def visit_entity(self, entity: "EntityNode") -> None:
+        # TODO: decide what to do with fields used magically, like entity.name which is really just a node name
+        # Should I wrap with sth?
+        model = Registry.entities_models[entity.type]
+        if not self._root_model:
+            self._root_model = model
+        elif self._models_stack:
+            self._models_to_join[self._models_stack[-1]].append(entity.name)
+
+        self._models_stack.append(model)
+        self._all_models.add(model)
+
+    def leave_entity(self, entity: "EntityNode") -> None:
+        self._models_stack.pop()
+
+
 class SqlAlchemyRepo:
     base: DeclarativeMeta = None
     _classes_to_models: typing.Dict[EntityOrVoType, typing.Type]
@@ -106,17 +167,29 @@ class SqlAlchemyRepo:
     @classmethod
     def prepare(cls, entity_cls: typing.Type[EntityType]) -> None:
         assert cls.base, "Must set cls base to an instance of DeclarativeMeta!"
-        table_name = inflection.pluralize(inflection.underscore(entity_cls.__name__))
-        if table_name not in cls.base.metadata.tables:
+        if not getattr(cls, 'entity', None):
             cls.entity = entity_cls
-            cls.model = cls._abstract_entity_tree_to_model(entity_cls, table_name)
+            cls._abstract_entity_tree_to_model(entity_cls)
 
     @classmethod
-    def _abstract_entity_tree_to_model(cls, entity_cls: typing.Type[EntityType], table_name: str):
+    def _abstract_entity_tree_to_model(cls, entity_cls: typing.Type[EntityType]) -> None:
         aet: AbstractEntityTree = type(cls).entities_to_aets[entity_cls]
         ModelBuildingVisitor(cls.base).traverse_from(aet.root)
 
+    # TODO: sqlalchemy class could have an utility for creating IDS
+    # Or it could be put into a separate utility function that would accept repo, then would get descendant classes
+    # and got the new id.
+
     def get(self, identity: IdentityType) -> EntityType:
+        # TODO: memoize query
+        aet: AbstractEntityTree = type(self.__class__).entities_to_aets[self.entity]
+        visitor = QueryBuildingVisitor()
+        visitor.traverse_from(aet.root)
+
+        result = visitor.query.with_session(self._session).one()
+        import pdb;pdb.set_trace()
+        return
+
         model = self._session.query(self.model).get(identity)
 
         T = typing.TypeVar("T")
