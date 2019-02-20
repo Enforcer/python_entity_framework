@@ -46,10 +46,10 @@ class SqlSubscriberRepo(SqlAlchemyRepo, SubscriberRepo):
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 engine = create_engine('postgresql://postgres:dbpasswd@localhost:5432/plays', echo=True)
-# Base.metadata.drop_all(engine)
+Base.metadata.drop_all(engine)
 Base.metadata.create_all(engine)
 Session = sessionmaker(engine)
 
-repo = SqlSubscriberRepo(Session())
-repo.get(1)
+# repo = SqlSubscriberRepo(Session())
+# repo.get(1)
 # repo.save(Subscriber(1, None, None))

@@ -48,20 +48,18 @@ class ModelBuildingVisitor(Visitor):
         self._entities_stack: typing.List[EntityNode] = []
         self._entities_raw_models: typing.Dict[typing.Type[Entity], RawModel] = {}
         self._prefix = self.EMPTY_PREFIX
+        self._last_nullable_vo_node: typing.Optional[ValueObjectNode] = None
 
     @property
     def current_entity(self) -> EntityNode:
         return self._entities_stack[-1]
 
     def visit_field(self, field: "FieldNode") -> None:
-        kwargs = {"primary_key": field.is_identity, "nullable": field.nullable}
+        kwargs = {"primary_key": field.is_identity, "nullable": field.nullable or self._last_nullable_vo_node}
         raw_model: RawModel = self._entities_raw_models[self.current_entity.type]
         raw_model.append_column(
             f"{self._prefix}{field.name}", Column(native_type_to_column.convert(field.type), **kwargs)
         )
-
-    def leave_field(self, field: "FieldNode") -> None:
-        pass
 
     def visit_entity(self, entity: "EntityNode") -> None:
         if entity.type in self._entities_raw_models:
@@ -100,9 +98,13 @@ class ModelBuildingVisitor(Visitor):
     def visit_value_object(self, value_object: "ValueObjectNode") -> None:
         # value objects' fields are embedded into entity above it
         self._prefix = f"{value_object.name}_"
+        if not self._last_nullable_vo_node and value_object.nullable:
+            self._last_nullable_vo_node = value_object
 
     def leave_value_object(self, value_object: "ValueObjectNode") -> None:
         self._prefix = self.EMPTY_PREFIX
+        if self._last_nullable_vo_node == value_object:
+            self._last_nullable_vo_node = None
 
     def visit_list_of_entities(self, list_of_entities: "ListOfEntitiesNode") -> None:
         raise NotImplementedError
