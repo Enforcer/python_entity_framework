@@ -56,16 +56,16 @@ class Visitor:
     def leave_field(self, field: "Field") -> None:
         pass
 
-    def visit_nested_entity(self, nested_entity: "EntityNode") -> None:
+    def visit_entity(self, entity: "EntityNode") -> None:
         pass
 
-    def leave_nested_entity(self, nested_entity: "EntityNode") -> None:
+    def leave_entity(self, entity: "EntityNode") -> None:
         pass
 
-    def visit_nested_value_object(self, nested_entity: "ValueObjectNode") -> None:
+    def visit_value_object(self, value_object: "ValueObjectNode") -> None:
         pass
 
-    def leave_nested_value_object(self, nested_entity: "ValueObjectNode") -> None:
+    def leave_value_object(self, value_object: "ValueObjectNode") -> None:
         pass
 
     def visit_list_of_entities(self, list_of_entities: "ListOfEntitiesNode") -> None:
@@ -74,10 +74,10 @@ class Visitor:
     def leave_list_of_entities(self, list_of_entities: "ListOfEntitiesNode") -> None:
         pass
 
-    def visit_list_of_value_objects(self, list_of_entities: "ListOfValueObjectsNode") -> None:
+    def visit_list_of_value_objects(self, list_of_value_objects: "ListOfValueObjectsNode") -> None:
         pass
 
-    def leave_list_of_value_objects(self, list_of_entities: "ListOfValueObjectsNode") -> None:
+    def leave_list_of_value_objects(self, list_of_value_objects: "ListOfValueObjectsNode") -> None:
         pass
 
 
@@ -116,18 +116,18 @@ class FieldNode(Node):
 
 class EntityNode(Node):
     def accept(self, visitor: Visitor) -> None:
-        visitor.visit_nested_entity(self)
+        visitor.visit_entity(self)
 
     def farewell(self, visitor: Visitor) -> None:
-        visitor.leave_nested_entity(self)
+        visitor.leave_entity(self)
 
 
 class ValueObjectNode(Node):
     def accept(self, visitor: Visitor) -> None:
-        visitor.visit_nested_value_object(self)
+        visitor.visit_value_object(self)
 
     def farewell(self, visitor: Visitor) -> None:
-        visitor.leave_nested_value_object(self)
+        visitor.leave_value_object(self)
 
 
 class ListOfEntitiesNode(Node):

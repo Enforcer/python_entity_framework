@@ -23,8 +23,8 @@ class Scribe(Visitor):
     def leave_field(self, node: "Node") -> None:
         self.visits_log.append(("leave", node.name))
 
-    visit_nested_entity = visit_nested_value_object = visit_list_of_entities = visit_list_of_value_objects = visit_field
-    leave_nested_entity = leave_nested_value_object = leave_list_of_entities = leave_list_of_value_objects = leave_field
+    visit_entity = visit_value_object = visit_list_of_entities = visit_list_of_value_objects = visit_field
+    leave_entity = leave_value_object = leave_list_of_entities = leave_list_of_value_objects = leave_field
 
 
 class Skill(ValueObject):
