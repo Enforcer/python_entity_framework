@@ -6,7 +6,7 @@ from collections import deque
 import attr
 import inflection
 
-from entity_framework.entity import Entity, Identity, ValueObject, EntityOrVo, EntityOrVoType
+from entity_framework.entity import Entity, Identity, ValueObject, EntityOrVoType
 
 
 def _is_generic(field_type: typing.Type) -> bool:
@@ -166,6 +166,7 @@ class AbstractEntityTree:
 
 
 def build(root: typing.Type[Entity]) -> AbstractEntityTree:
+    # TODO: children could be tuple, not list. Then, Nodes would be hashable.
     def parse_node(current_root: EntityOrVoType, name: str) -> Node:
         node_name = name
         is_list = False

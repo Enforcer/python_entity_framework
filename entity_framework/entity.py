@@ -12,6 +12,10 @@ class ValueObjectWithIdentity(TypeError):
     pass
 
 
+class EntityNestedInValueObject(TypeError):
+    pass
+
+
 T = typing.TypeVar("T")
 
 
@@ -42,9 +46,23 @@ class ValueObjectMeta(abc.ABCMeta):
         if name == "ValueObject":
             return cls
         attr_cls = attr.s(auto_attribs=True)(cls)
-        if any(Identity.is_identity(field) for field in attr.fields(attr_cls)):
+        fields = attr.fields(attr_cls)
+        if any(Identity.is_identity(field) for field in fields):
             raise ValueObjectWithIdentity
+        if any(_is_nested_entity(field.type) for field in fields):
+            raise EntityNestedInValueObject
         return attr_cls
+
+
+def _is_nested_entity(field_type: typing.Type) -> bool:
+    try:
+        return issubclass(field_type, Entity) or (
+            field_type.__origin__ == typing.Union
+            and isinstance(None, field_type.__args__[1])
+            and issubclass(field_type.__args__[0], Entity)
+        )
+    except AttributeError:
+        return False
 
 
 class ValueObject(metaclass=ValueObjectMeta):
