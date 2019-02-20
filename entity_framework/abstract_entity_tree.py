@@ -80,6 +80,9 @@ class Visitor:
     def leave_list_of_value_objects(self, list_of_value_objects: "ListOfValueObjectsNode") -> None:
         pass
 
+    def noop(self, _: "Node") -> None:
+        pass
+
 
 class NodeMeta(type):
     def __new__(mcs, name: str, bases: tuple, namespace: dict) -> typing.Type:

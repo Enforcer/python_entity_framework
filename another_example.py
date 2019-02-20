@@ -49,5 +49,5 @@ Base.metadata.drop_all(engine)
 Base.metadata.create_all(engine)
 Session = sessionmaker(engine)
 
-repo = SqlSubscriberRepo(Session())
-repo.save(Subscriber(1, None, None))
+# repo = SqlSubscriberRepo(Session())
+# repo.save(Subscriber(1, None, None))
