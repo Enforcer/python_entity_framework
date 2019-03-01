@@ -7,8 +7,8 @@ from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy.ext.declarative import DeclarativeMeta, declarative_base
 
 from entity_framework import Entity, Identity, ValueObject, Repository
-from entity_framework.storages.sqlalchemy import Registry
 from entity_framework.storages.sqlalchemy import SqlAlchemyRepo
+from entity_framework.storages.sqlalchemy.registry import Registry
 
 
 SubscriberId = int
@@ -83,14 +83,7 @@ def session(sa_base: DeclarativeMeta, engine: Engine) -> Generator[Session, None
             [Plan, Subscriber],
             [
                 [{"id": 1, "discount": 0.5}],
-                [
-                    {
-                        "id": 1,
-                        "plan_id": 1,
-                        "current_subscription_plan_id": 1,
-                        "current_subscription_start_at": 0,
-                    }
-                ],
+                [{"id": 1, "plan_id": 1, "current_subscription_plan_id": 1, "current_subscription_start_at": 0}],
             ],
             Subscriber(id=1, plan=Plan(id=1, discount=0.5), current_subscription=Subscription(1, 0)),
         ),
@@ -114,20 +107,23 @@ def test_gets_exemplary_data(
     assert repo.get(expected_aggregate.id) == expected_aggregate
 
 
-@pytest.mark.parametrize('aggregate, expected_db_data', [
-    (
-        Subscriber(id=1, plan=Plan(id=1, discount=0.5), current_subscription=Subscription(1, 0)),
-        {
-            Plan: [{'id': 1, 'discount': 0.5}],
-            Subscriber: [{'id': 1, 'current_subscription_start_at': 0, 'current_subscription_plan_id': 1}]
-        }
-    ),
-])
+@pytest.mark.parametrize(
+    "aggregate, expected_db_data",
+    [
+        (
+            Subscriber(id=1, plan=Plan(id=1, discount=0.5), current_subscription=Subscription(1, 0)),
+            {
+                Plan: [{"id": 1, "discount": 0.5}],
+                Subscriber: [{"id": 1, "current_subscription_start_at": 0, "current_subscription_plan_id": 1}],
+            },
+        )
+    ],
+)
 def test_saves_exemplary_data(
-        sa_repo: Type[Union[SqlAlchemyRepo, SubscriberRepo]],
-        session: Session,
-        aggregate: Subscriber,
-        expected_db_data: Dict[Type[Entity], List[Dict]]
+    sa_repo: Type[Union[SqlAlchemyRepo, SubscriberRepo]],
+    session: Session,
+    aggregate: Subscriber,
+    expected_db_data: Dict[Type[Entity], List[Dict]],
 ) -> None:
     repo = sa_repo(session)
 

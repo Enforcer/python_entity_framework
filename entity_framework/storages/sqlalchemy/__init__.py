@@ -9,7 +9,6 @@ from entity_framework.storages.sqlalchemy import native_type_to_column, types
 from entity_framework.storages.sqlalchemy.populating_aggregates.visitor import BuildingAggregateVisitor
 from entity_framework.storages.sqlalchemy.constructing_model.visitor import ModelBuildingVisitor
 from entity_framework.storages.sqlalchemy.querying.visitor import QueryBuildingVisitor
-from entity_framework.storages.sqlalchemy.registry import Registry
 
 
 class SqlAlchemyRepo:
