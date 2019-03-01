@@ -27,6 +27,16 @@ class SqlAlchemyRepo:
             cls.entity = entity_cls
             cls._abstract_entity_tree_to_model(entity_cls)
 
+    @property
+    def query(self) -> Query:
+        if not SqlAlchemyRepo._query:
+            aet: AbstractEntityTree = type(self.__class__).entities_to_aets[self.entity]
+            visitor = QueryBuildingVisitor()
+            visitor.traverse_from(aet.root)
+            SqlAlchemyRepo._query = visitor.query
+
+        return SqlAlchemyRepo._query
+
     @classmethod
     def _abstract_entity_tree_to_model(cls, entity_cls: typing.Type[EntityType]) -> None:
         aet: AbstractEntityTree = type(cls).entities_to_aets[entity_cls]
@@ -38,18 +48,13 @@ class SqlAlchemyRepo:
 
     def get(self, identity: IdentityType) -> EntityType:
         # TODO: memoize populating func
-        aet: AbstractEntityTree = type(self.__class__).entities_to_aets[self.entity]
-        if not SqlAlchemyRepo._query:
-            visitor = QueryBuildingVisitor()
-            visitor.traverse_from(aet.root)
-            SqlAlchemyRepo._query = visitor.query
-
-        result = self._query.with_session(self._session).get(identity)
+        result = self.query.with_session(self._session).get(identity)
         if not result:
             # TODO: Raise more specialized exception
             raise exc.NoResultFound
 
         converting_visitor = BuildingAggregateVisitor(result)
+        aet: AbstractEntityTree = type(self.__class__).entities_to_aets[self.entity]
         converting_visitor.traverse_from(aet.root)
         return converting_visitor.result
 
