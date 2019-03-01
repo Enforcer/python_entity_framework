@@ -15,7 +15,7 @@ from entity_framework.abstract_entity_tree import (
 from entity_framework.entity import Entity
 from entity_framework.storages.sqlalchemy import native_type_to_column
 from entity_framework.storages.sqlalchemy.registry import Registry
-from entity_framework.storages.sqlalchemy.model_constructing.raw_model import RawModel
+from entity_framework.storages.sqlalchemy.constructing_model.raw_model import RawModel
 
 
 class ModelBuildingVisitor(Visitor):

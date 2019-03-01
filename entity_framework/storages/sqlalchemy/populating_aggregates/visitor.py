@@ -62,7 +62,12 @@ class BuildingAggregateVisitor(Visitor):
     def _construct_complex_object(self, vo_or_entity: typing.Union[ValueObjectNode, EntityNode]) -> None:
         self._ef_objects_stack.pop()
         entity_dict = self._ef_dicts_stack.pop()
-        instance = vo_or_entity.type(**entity_dict)
+        if vo_or_entity.nullable and entity_dict and all(v is None for v in entity_dict.values()):
+            # One is not able to tell the difference between nullable object with all its fields = None or
+            # an absence of entire vo_or_entity
+            instance = None
+        else:
+            instance = vo_or_entity.type(**entity_dict)
         if self._ef_dicts_stack:
             self._ef_dicts_stack[-1][vo_or_entity.name] = instance
         else:
