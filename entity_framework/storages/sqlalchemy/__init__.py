@@ -1,6 +1,6 @@
 import typing
 
-from sqlalchemy.orm import Session, Query
+from sqlalchemy.orm import Session, Query, exc
 from sqlalchemy.ext.declarative import DeclarativeMeta
 
 from entity_framework.abstract_entity_tree import AbstractEntityTree
@@ -44,8 +44,10 @@ class SqlAlchemyRepo:
             visitor.traverse_from(aet.root)
             SqlAlchemyRepo._query = visitor.query
 
-        # TODO: apply filter PROPERLY, not by hardcoded 'id'
-        result = self._query.with_session(self._session).filter_by(id=identity).one()
+        result = self._query.with_session(self._session).get(identity)
+        if not result:
+            # TODO: Raise more specialized exception
+            raise exc.NoResultFound
 
         converting_visitor = BuildingAggregateVisitor(result)
         converting_visitor.traverse_from(aet.root)
