@@ -3,16 +3,13 @@ import typing
 from sqlalchemy.orm import Session, Query
 from sqlalchemy.ext.declarative import DeclarativeMeta
 
-from entity_framework.entity import Entity, ValueObject
 from entity_framework.abstract_entity_tree import AbstractEntityTree
 from entity_framework.repository import EntityType, IdentityType, EntityOrVoType
 from entity_framework.storages.sqlalchemy import native_type_to_column, types
-from entity_framework.storages.sqlalchemy.visitors import (
-    ModelBuildingVisitor,
-    QueryBuildingVisitor,
-    ConvertingToEntityVisitor,
-    Registry,
-)
+from entity_framework.storages.sqlalchemy.building_aggregates.visitor import BuildingAggregateVisitor
+from entity_framework.storages.sqlalchemy.model_constructing.visitor import ModelBuildingVisitor
+from entity_framework.storages.sqlalchemy.querying.visitor import QueryBuildingVisitor
+from entity_framework.storages.sqlalchemy.registry import Registry
 
 
 class SqlAlchemyRepo:
@@ -41,13 +38,13 @@ class SqlAlchemyRepo:
 
     def get(self, identity: IdentityType) -> EntityType:
         # TODO: memoize populating func
-        # TODO: apply filter PROPERLY
         aet: AbstractEntityTree = type(self.__class__).entities_to_aets[self.entity]
         if not SqlAlchemyRepo._query:
             visitor = QueryBuildingVisitor()
             visitor.traverse_from(aet.root)
             SqlAlchemyRepo._query = visitor.query
 
+        # TODO: apply filter PROPERLY, not by hardcoded 'id'
         result = self._query.with_session(self._session).filter_by(id=identity).one()
 
         converting_visitor = ConvertingToEntityVisitor(result)
@@ -59,4 +56,3 @@ class SqlAlchemyRepo:
 
 
 # TODO: Test with two nested entities of the same type
-# TODO: Entities CANNOT be nested inside value objects

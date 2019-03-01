@@ -2,14 +2,7 @@ import typing
 
 import pytest
 
-from entity_framework.entity import (
-    Entity,
-    EntityWithoutIdentity,
-    Identity,
-    ValueObject,
-    ValueObjectWithIdentity,
-    EntityNestedInValueObject,
-)
+from entity_framework.entity import Entity, EntityWithoutIdentity, Identity, ValueObject, ValueObjectWithIdentity
 
 
 def test_entity_allows_one_with_identity():
