@@ -96,7 +96,7 @@ class Node(metaclass=NodeMeta):
     name: str
     type: typing.Type
     nullable: bool = False
-    children: typing.List["Node"] = attr.Factory(list)
+    children: typing.Tuple["Node", ...] = attr.Factory(list)
 
     @abc.abstractmethod
     def accept(self, visitor: Visitor) -> None:
@@ -203,8 +203,9 @@ def build(root: typing.Type[Entity]) -> AbstractEntityTree:
                 else:
                     raise Exception(f"Unhandled Generic type - {field_type}")
 
-            node_children.append(FieldNode(field_name, field_type, field_nullable, [], is_identity))
+            node_children.append(FieldNode(field_name, field_type, field_nullable, (), is_identity))
 
+        node_children = tuple(node_children)
         if issubclass(node_type, Entity):
             if is_list:
                 return ListOfEntitiesNode(node_name, node_type, node_nullable, node_children)

@@ -26,6 +26,11 @@ class SqlAlchemyRepo:
             cls.entity = entity_cls
             cls._abstract_entity_tree_to_model(entity_cls)
 
+    @classmethod
+    def _abstract_entity_tree_to_model(cls, entity_cls: typing.Type[EntityType]) -> None:
+        aet: AbstractEntityTree = type(cls).entities_to_aets[entity_cls]
+        ModelBuildingVisitor(cls.base).traverse_from(aet.root)
+
     @property
     def query(self) -> Query:
         if not SqlAlchemyRepo._query:
@@ -35,11 +40,6 @@ class SqlAlchemyRepo:
             SqlAlchemyRepo._query = visitor.query
 
         return SqlAlchemyRepo._query
-
-    @classmethod
-    def _abstract_entity_tree_to_model(cls, entity_cls: typing.Type[EntityType]) -> None:
-        aet: AbstractEntityTree = type(cls).entities_to_aets[entity_cls]
-        ModelBuildingVisitor(cls.base).traverse_from(aet.root)
 
     # TODO: sqlalchemy class could have an utility for creating IDS
     # Or it could be put into a separate utility function that would accept repo, then would get descendant classes

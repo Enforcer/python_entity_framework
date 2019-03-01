@@ -35,13 +35,13 @@ def test_builds_simple_flat_entity():
             name="simple_flat",
             type=SimpleFlat,
             nullable=False,
-            children=[
-                FieldNode(name="guid", type=UUID, nullable=False, children=[], is_identity=True),
-                FieldNode(name="name", type=str, nullable=True, children=[], is_identity=False),
-                FieldNode(name="score", type=int, nullable=False, children=[], is_identity=False),
-                FieldNode(name="enumerated", type=DummyEnum, nullable=False, children=[], is_identity=False),
-                FieldNode(name="balance", type=Decimal, nullable=True, children=[], is_identity=False),
-            ],
+            children=(
+                FieldNode(name="guid", type=UUID, nullable=False, children=(), is_identity=True),
+                FieldNode(name="name", type=str, nullable=True, children=(), is_identity=False),
+                FieldNode(name="score", type=int, nullable=False, children=(), is_identity=False),
+                FieldNode(name="enumerated", type=DummyEnum, nullable=False, children=(), is_identity=False),
+                FieldNode(name="balance", type=Decimal, nullable=True, children=(), is_identity=False),
+            ),
         )
     )
 
@@ -70,26 +70,26 @@ def test_builds_aggregate_with_embedded_entity_and_value_object():
             name="some_aggregate",
             type=SomeAggregate,
             nullable=False,
-            children=[
-                FieldNode(name="guid", type=UUID, nullable=False, children=[], is_identity=True),
+            children=(
+                FieldNode(name="guid", type=UUID, nullable=False, children=(), is_identity=True),
                 EntityNode(
                     name="nested",
                     type=NestedEntity,
-                    children=[
-                        FieldNode(name="nested_guid", type=UUID, nullable=False, children=[], is_identity=True),
-                        FieldNode(name="name", type=str, nullable=True, children=[], is_identity=False),
-                    ],
+                    children=(
+                        FieldNode(name="nested_guid", type=UUID, nullable=False, children=(), is_identity=True),
+                        FieldNode(name="name", type=str, nullable=True, children=(), is_identity=False),
+                    ),
                 ),
                 ValueObjectNode(
                     name="balance",
                     type=NestedValueObject,
                     nullable=False,
-                    children=[
-                        FieldNode(name="amount", type=Decimal, nullable=False, children=[], is_identity=False),
-                        FieldNode(name="currency", type=str, nullable=False, children=[], is_identity=False),
-                    ],
+                    children=(
+                        FieldNode(name="amount", type=Decimal, nullable=False, children=(), is_identity=False),
+                        FieldNode(name="currency", type=str, nullable=False, children=(), is_identity=False),
+                    ),
                 ),
-            ],
+            ),
         )
     )
 
@@ -107,18 +107,18 @@ def test_builds_aggregate_with_list_of_value_objects():
             name="aggregate_with_value_object_list",
             type=AggregateWithValueObjectList,
             nullable=False,
-            children=[
-                FieldNode(name="id", type=int, nullable=False, children=[], is_identity=True),
+            children=(
+                FieldNode(name="id", type=int, nullable=False, children=(), is_identity=True),
                 ListOfValueObjectsNode(
                     name="wallets",
                     type=NestedValueObject,
                     nullable=False,
-                    children=[
-                        FieldNode(name="amount", type=Decimal, nullable=False, children=[], is_identity=False),
-                        FieldNode(name="currency", type=str, nullable=False, children=[], is_identity=False),
-                    ],
+                    children=(
+                        FieldNode(name="amount", type=Decimal, nullable=False, children=(), is_identity=False),
+                        FieldNode(name="currency", type=str, nullable=False, children=(), is_identity=False),
+                    ),
                 ),
-            ],
+            ),
         )
     )
 
@@ -135,17 +135,17 @@ def test_optional_nested_entity_makes_all_its_fields_optional():
         root=EntityNode(
             name="aggregate_with_optional_nested",
             type=AggregateWithOptionalNested,
-            children=[
-                FieldNode(name="id", type=int, nullable=False, children=[], is_identity=True),
+            children=(
+                FieldNode(name="id", type=int, nullable=False, children=(), is_identity=True),
                 ValueObjectNode(
                     name="wallet",
                     type=NestedValueObject,
                     nullable=True,
-                    children=[
-                        FieldNode(name="amount", type=Decimal, nullable=False, children=[], is_identity=False),
-                        FieldNode(name="currency", type=str, nullable=False, children=[], is_identity=False),
-                    ],
+                    children=(
+                        FieldNode(name="amount", type=Decimal, nullable=False, children=(), is_identity=False),
+                        FieldNode(name="currency", type=str, nullable=False, children=(), is_identity=False),
+                    ),
                 ),
-            ],
+            ),
         )
     )
