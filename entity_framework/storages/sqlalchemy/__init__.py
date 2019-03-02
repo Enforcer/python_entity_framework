@@ -3,17 +3,18 @@ import typing
 from sqlalchemy.orm import Session, Query, exc
 from sqlalchemy.ext.declarative import DeclarativeMeta
 
-from entity_framework.abstract_entity_tree import AbstractEntityTree
-from entity_framework.repository import EntityType, IdentityType, EntityOrVoType
+from entity_framework.repository import EntityType, IdentityType
 from entity_framework.storages.sqlalchemy import native_type_to_column, types
 from entity_framework.storages.sqlalchemy.populating_aggregates.visitor import BuildingAggregateVisitor
 from entity_framework.storages.sqlalchemy.constructing_model.visitor import ModelBuildingVisitor
 from entity_framework.storages.sqlalchemy.querying.visitor import QueryBuildingVisitor
+from entity_framework.storages.sqlalchemy.registry import SaRegistry
 
 
 class SqlAlchemyRepo:
     base: DeclarativeMeta = None
-    _classes_to_models: typing.Dict[EntityOrVoType, typing.Type]
+    registry: SaRegistry = None
+
     _query: typing.Optional[Query] = None
 
     def __init__(self, session: Session) -> None:
@@ -28,14 +29,14 @@ class SqlAlchemyRepo:
 
     @classmethod
     def _abstract_entity_tree_to_model(cls, entity_cls: typing.Type[EntityType]) -> None:
-        aet: AbstractEntityTree = type(cls).entities_to_aets[entity_cls]
-        ModelBuildingVisitor(cls.base).traverse_from(aet.root)
+        aet = cls.registry.entities_to_aets[entity_cls]
+        ModelBuildingVisitor(cls.base, cls.registry).traverse_from(aet.root)
 
     @property
     def query(self) -> Query:
         if not SqlAlchemyRepo._query:
-            aet: AbstractEntityTree = type(self.__class__).entities_to_aets[self.entity]
-            visitor = QueryBuildingVisitor()
+            aet = self.registry.entities_to_aets[self.entity]
+            visitor = QueryBuildingVisitor(self.registry)
             visitor.traverse_from(aet.root)
             SqlAlchemyRepo._query = visitor.query
 
@@ -53,7 +54,7 @@ class SqlAlchemyRepo:
             raise exc.NoResultFound
 
         converting_visitor = BuildingAggregateVisitor(result)
-        aet: AbstractEntityTree = type(self.__class__).entities_to_aets[self.entity]
+        aet = self.registry.entities_to_aets[self.entity]
         converting_visitor.traverse_from(aet.root)
         return converting_visitor.result
 

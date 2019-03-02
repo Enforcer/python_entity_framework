@@ -14,15 +14,16 @@ from entity_framework.abstract_entity_tree import (
 )
 from entity_framework.entity import Entity
 from entity_framework.storages.sqlalchemy import native_type_to_column
-from entity_framework.storages.sqlalchemy.registry import Registry
+from entity_framework.storages.sqlalchemy.registry import SaRegistry
 from entity_framework.storages.sqlalchemy.constructing_model.raw_model import RawModel
 
 
 class ModelBuildingVisitor(Visitor):
     EMPTY_PREFIX = ""
 
-    def __init__(self, base: DeclarativeMeta) -> None:
+    def __init__(self, base: DeclarativeMeta, registry: SaRegistry) -> None:
         self._base = base
+        self._registry = registry
         self._entities_stack: List[EntityNode] = []
         self._entities_raw_models: Dict[Type[Entity], RawModel] = {}
         self._prefix = self.EMPTY_PREFIX
@@ -71,7 +72,7 @@ class ModelBuildingVisitor(Visitor):
     def leave_entity(self, entity: EntityNode) -> None:
         entity_node = self._entities_stack.pop()
         raw_model: RawModel = self._entities_raw_models[entity_node.type]
-        Registry.entities_models[entity.type] = raw_model.materialize()
+        self._registry.entities_models[entity.type] = raw_model.materialize()
 
     def visit_value_object(self, value_object: ValueObjectNode) -> None:
         # value objects' fields are embedded into entity above it

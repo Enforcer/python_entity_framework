@@ -8,7 +8,7 @@ from sqlalchemy.ext.declarative import DeclarativeMeta, declarative_base
 
 from entity_framework import Entity, Identity, ValueObject, Repository
 from entity_framework.storages.sqlalchemy import SqlAlchemyRepo
-from entity_framework.storages.sqlalchemy.registry import Registry
+from entity_framework.storages.sqlalchemy.registry import SaRegistry
 
 
 SubscriberId = int
@@ -50,6 +50,7 @@ def sa_base() -> DeclarativeMeta:
 def sa_repo(sa_base: DeclarativeMeta) -> Type[Union[SqlAlchemyRepo, SubscriberRepo]]:
     class SqlSubscriberRepo(SqlAlchemyRepo, SubscriberRepo):
         base = sa_base
+        registry = SaRegistry()
 
     return SqlSubscriberRepo
 
@@ -100,7 +101,7 @@ def test_gets_exemplary_data(
     repo = sa_repo(session)
 
     for table_name, entity, mappings in zip(tables, entities, rows):
-        model = Registry.entities_models[entity]
+        model = sa_repo.registry.entities_models[entity]
         assert table_name == model.__tablename__
         session.bulk_insert_mappings(model, mappings)
 
@@ -130,5 +131,5 @@ def test_saves_exemplary_data(
     repo.save(aggregate)
 
     for entity, expected_rows in expected_db_data.items():
-        model = Registry.entities_models[entity]
+        model = sa_repo.registry.entities_models[entity]
         assert session.execute(model.__table__.select()).fetchall() == expected_rows

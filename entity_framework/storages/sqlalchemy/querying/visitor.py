@@ -4,11 +4,12 @@ from collections import defaultdict
 from sqlalchemy.orm import Query, joinedload
 
 from entity_framework.abstract_entity_tree import Visitor, EntityNode
-from entity_framework.storages.sqlalchemy.registry import Registry
+from entity_framework.storages.sqlalchemy.registry import SaRegistry
 
 
 class QueryBuildingVisitor(Visitor):
-    def __init__(self) -> None:
+    def __init__(self, registry: SaRegistry) -> None:
+        self._registry = registry
         self._root_model: Optional[Type] = None
         self._models_stack: List[Type] = []
         self._models_to_join: DefaultDict[Type, List[str]] = defaultdict(list)
@@ -27,7 +28,7 @@ class QueryBuildingVisitor(Visitor):
 
     def visit_entity(self, entity: EntityNode) -> None:
         # TODO: decide what to do with fields used magically, like entity.name which is really just a node name
-        model = Registry.entities_models[entity.type]
+        model = self._registry.entities_models[entity.type]
         if not self._root_model:
             self._root_model = model
         elif self._models_stack:
