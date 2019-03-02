@@ -56,11 +56,6 @@ def sa_repo(sa_base: DeclarativeMeta) -> Type[Union[SqlAlchemyRepo, SubscriberRe
 
 
 @pytest.fixture()
-def engine() -> Engine:
-    return create_engine("postgresql://postgres:dbpasswd@localhost:5432/plays")
-
-
-@pytest.fixture()
 def session(sa_base: DeclarativeMeta, engine: Engine) -> Generator[Session, None, None]:
     sa_base.metadata.drop_all(engine)
     sa_base.metadata.create_all(engine)

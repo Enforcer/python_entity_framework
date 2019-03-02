@@ -25,12 +25,8 @@ class SqlAlchemyRepo:
         assert cls.base, "Must set cls base to an instance of DeclarativeMeta!"
         if not getattr(cls, "entity", None):
             cls.entity = entity_cls
-            cls._abstract_entity_tree_to_model(entity_cls)
-
-    @classmethod
-    def _abstract_entity_tree_to_model(cls, entity_cls: typing.Type[EntityType]) -> None:
-        aet = cls.registry.entities_to_aets[entity_cls]
-        ModelBuildingVisitor(cls.base, cls.registry).traverse_from(aet.root)
+            aet = cls.registry.entities_to_aets[entity_cls]
+            ModelBuildingVisitor(cls.base, cls.registry).traverse_from(aet.root)
 
     @property
     def query(self) -> Query:
