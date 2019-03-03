@@ -1,6 +1,8 @@
 # Python Entity Framework
 Persistence for attr-based Python classes.
 
+*WARNING* A lot of things here is not yet working, there is some mess. The project is stil in the prototyping phase.
+
 # Example
 ```python
 from entity_framework import Entity, Identity, Repository
