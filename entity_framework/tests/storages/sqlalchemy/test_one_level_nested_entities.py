@@ -1,7 +1,6 @@
 from typing import Optional, Generator, Union, Type, List, Dict
 
 import pytest
-from sqlalchemy import create_engine
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy.ext.declarative import DeclarativeMeta, declarative_base
