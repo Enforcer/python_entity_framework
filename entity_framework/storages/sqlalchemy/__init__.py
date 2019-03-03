@@ -7,7 +7,6 @@ from entity_framework.repository import EntityType, IdentityType
 from entity_framework.storages.sqlalchemy import native_type_to_column, types
 from entity_framework.storages.sqlalchemy.populating_aggregates.visitor import PopulatingAggregateVisitor
 from entity_framework.storages.sqlalchemy.constructing_model.visitor import ModelConstructingVisitor
-from entity_framework.storages.sqlalchemy.populating_model.visitor import ModelPopulatingVisitor
 from entity_framework.storages.sqlalchemy.querying.visitor import QueryBuildingVisitor
 from entity_framework.storages.sqlalchemy.registry import SaRegistry
 
@@ -56,7 +55,4 @@ class SqlAlchemyRepo:
         return converting_visitor.result
 
     def save(self, entity: EntityType) -> None:
-        visitor = ModelPopulatingVisitor(entity, self.registry)
-        visitor.traverse_from(self.registry.entities_to_aets[self.entity].root)
-        self._session.merge(visitor.result)
-        self._session.flush()
+        raise NotImplementedError
