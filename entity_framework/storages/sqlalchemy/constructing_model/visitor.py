@@ -18,7 +18,7 @@ from entity_framework.storages.sqlalchemy.registry import SaRegistry
 from entity_framework.storages.sqlalchemy.constructing_model.raw_model import RawModel
 
 
-class ModelBuildingVisitor(Visitor):
+class ModelConstructingVisitor(Visitor):
     EMPTY_PREFIX = ""
 
     def __init__(self, base: DeclarativeMeta, registry: SaRegistry) -> None:

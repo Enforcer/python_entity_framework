@@ -10,7 +10,7 @@ from entity_framework.abstract_entity_tree import (
 )
 
 
-class BuildingAggregateVisitor(Visitor):
+class PopulatingAggregateVisitor(Visitor):
     EMPTY_PREFIX = ""
 
     def __init__(self, db_result: object) -> None:

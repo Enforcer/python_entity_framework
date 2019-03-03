@@ -5,8 +5,9 @@ from sqlalchemy.ext.declarative import DeclarativeMeta
 
 from entity_framework.repository import EntityType, IdentityType
 from entity_framework.storages.sqlalchemy import native_type_to_column, types
-from entity_framework.storages.sqlalchemy.populating_aggregates.visitor import BuildingAggregateVisitor
-from entity_framework.storages.sqlalchemy.constructing_model.visitor import ModelBuildingVisitor
+from entity_framework.storages.sqlalchemy.populating_aggregates.visitor import PopulatingAggregateVisitor
+from entity_framework.storages.sqlalchemy.constructing_model.visitor import ModelConstructingVisitor
+from entity_framework.storages.sqlalchemy.populating_model.visitor import ModelPopulatingVisitor
 from entity_framework.storages.sqlalchemy.querying.visitor import QueryBuildingVisitor
 from entity_framework.storages.sqlalchemy.registry import SaRegistry
 
@@ -26,7 +27,7 @@ class SqlAlchemyRepo:
         if not getattr(cls, "entity", None):
             cls.entity = entity_cls
             aet = cls.registry.entities_to_aets[entity_cls]
-            ModelBuildingVisitor(cls.base, cls.registry).traverse_from(aet.root)
+            ModelConstructingVisitor(cls.base, cls.registry).traverse_from(aet.root)
 
     @property
     def query(self) -> Query:
@@ -49,10 +50,13 @@ class SqlAlchemyRepo:
             # TODO: Raise more specialized exception
             raise exc.NoResultFound
 
-        converting_visitor = BuildingAggregateVisitor(result)
+        converting_visitor = PopulatingAggregateVisitor(result)
         aet = self.registry.entities_to_aets[self.entity]
         converting_visitor.traverse_from(aet.root)
         return converting_visitor.result
 
     def save(self, entity: EntityType) -> None:
-        pass
+        visitor = ModelPopulatingVisitor(entity, self.registry)
+        visitor.traverse_from(self.registry.entities_to_aets[self.entity].root)
+        self._session.merge(visitor.result)
+        self._session.flush()
