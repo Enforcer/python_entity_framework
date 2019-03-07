@@ -109,7 +109,16 @@ def test_gets_exemplary_data(
             Subscriber(id=1, plan=Plan(id=1, discount=0.5), current_subscription=Subscription(1, 0)),
             {
                 Plan: [{"id": 1, "discount": 0.5}],
-                Subscriber: [{"id": 1, "current_subscription_start_at": 0, "current_subscription_plan_id": 1}],
+                Subscriber: [
+                    {
+                        "id": 1,
+                        "current_subscription_start_at": 0,
+                        "current_subscription_plan_id": 1,
+                        "lifetime_subscription_start_at": None,
+                        "lifetime_subscription_plan_id": None,
+                        "plan_id": 1,
+                    }
+                ],
             },
         )
     ],
@@ -126,4 +135,4 @@ def test_saves_exemplary_data(
 
     for entity, expected_rows in expected_db_data.items():
         model = sa_repo.registry.entities_models[entity]
-        assert session.execute(model.__table__.select()).fetchall() == expected_rows
+        assert [dict(row) for row in session.execute(model.__table__.select()).fetchall()] == expected_rows
