@@ -17,16 +17,16 @@ def _get_wrapped_type(wrapped_type: typing.Optional) -> typing.Type:
     return wrapped_type.__args__[0]
 
 
-def _is_field_nullable(field_type: typing.Type) -> bool:
+def _is_field_optional(field_type: typing.Type) -> bool:
     return field_type.__origin__ == typing.Union and isinstance(None, field_type.__args__[1])
 
 
 def _is_nested_entity_or_vo(field_type: typing.Type) -> bool:
-    return issubclass(field_type, (Entity, ValueObject)) or _is_nullable_entity_or_vo(field_type)
+    return issubclass(field_type, (Entity, ValueObject)) or _is_optional_entity_or_vo(field_type)
 
 
-def _is_nullable_entity_or_vo(field_type: typing.Type) -> bool:
-    if _is_generic(field_type) and _is_field_nullable(field_type):
+def _is_optional_entity_or_vo(field_type: typing.Type) -> bool:
+    if _is_generic(field_type) and _is_field_optional(field_type):
         return issubclass(_get_wrapped_type(field_type), (Entity, ValueObject))
     return False
 
@@ -95,7 +95,7 @@ class NodeMeta(type):
 class Node(metaclass=NodeMeta):
     name: str
     type: typing.Type
-    nullable: bool = False
+    optional: bool = False
     children: typing.Tuple["Node", ...] = attr.Factory(list)
 
     @abc.abstractmethod
@@ -171,14 +171,14 @@ def build(root: typing.Type[Entity]) -> AbstractEntityTree:
         node_name = name
         is_list = False
         if _is_list_of_entities_or_vos(current_root):
-            node_nullable = False
+            node_optional = False
             node_type = _get_wrapped_type(current_root)
             is_list = True
-        elif _is_nullable_entity_or_vo(current_root):
-            node_nullable = True
+        elif _is_optional_entity_or_vo(current_root):
+            node_optional = True
             node_type = _get_wrapped_type(current_root)
         else:
-            node_nullable = False
+            node_optional = False
             node_type = current_root
         node_children = []
 
@@ -190,30 +190,30 @@ def build(root: typing.Type[Entity]) -> AbstractEntityTree:
                 node_children.append(parse_node(field_type, field_name))
                 continue
 
-            field_nullable = False
+            field_optional = False
             is_identity = False
 
             if _is_generic(field.type):
                 if _is_identity(field_type):
                     field_type = _get_wrapped_type(field.type)
                     is_identity = True
-                elif _is_field_nullable(field.type):
+                elif _is_field_optional(field.type):
                     field_type = _get_wrapped_type(field.type)
-                    field_nullable = True
+                    field_optional = True
                 else:
                     raise Exception(f"Unhandled Generic type - {field_type}")
 
-            node_children.append(FieldNode(field_name, field_type, field_nullable, (), is_identity))
+            node_children.append(FieldNode(field_name, field_type, field_optional, (), is_identity))
 
         node_children = tuple(node_children)
         if issubclass(node_type, Entity):
             if is_list:
-                return ListOfEntitiesNode(node_name, node_type, node_nullable, node_children)
-            return EntityNode(node_name, node_type, node_nullable, node_children)
+                return ListOfEntitiesNode(node_name, node_type, node_optional, node_children)
+            return EntityNode(node_name, node_type, node_optional, node_children)
 
         if is_list:
-            return ListOfValueObjectsNode(node_name, node_type, node_nullable, node_children)
-        return ValueObjectNode(node_name, node_type, node_nullable, node_children)
+            return ListOfValueObjectsNode(node_name, node_type, node_optional, node_children)
+        return ValueObjectNode(node_name, node_type, node_optional, node_children)
 
     root_node = parse_node(root, inflection.underscore(root.__name__))
     return AbstractEntityTree(root_node)

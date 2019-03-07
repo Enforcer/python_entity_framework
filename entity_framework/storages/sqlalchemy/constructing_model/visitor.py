@@ -27,14 +27,14 @@ class ModelConstructingVisitor(Visitor):
         self._entities_stack: List[EntityNode] = []
         self._entities_raw_models: Dict[Type[Entity], RawModel] = {}
         self._prefix = self.EMPTY_PREFIX
-        self._last_nullable_vo_node: Optional[ValueObjectNode] = None
+        self._last_optional_vo_node: Optional[ValueObjectNode] = None
 
     @property
     def current_entity(self) -> EntityNode:
         return self._entities_stack[-1]
 
     def visit_field(self, field: FieldNode) -> None:
-        kwargs = {"primary_key": field.is_identity, "nullable": field.nullable or self._last_nullable_vo_node}
+        kwargs = {"primary_key": field.is_identity, "nullable": field.optional or self._last_optional_vo_node}
         raw_model: RawModel = self._entities_raw_models[self.current_entity.type]
         raw_model.append_column(
             f"{self._prefix}{field.name}", Column(native_type_to_column.convert(field.type), **kwargs)
@@ -59,10 +59,10 @@ class ModelConstructingVisitor(Visitor):
                 Column(
                     native_type_to_column.convert(identity_node.type),
                     ForeignKey(f"{table_name}.{identity_node.name}"),
-                    nullable=entity.nullable,
+                    nullable=entity.optional,
                 ),
             )
-            raw_model.append_relationship(entity.name, model_name, entity.nullable)
+            raw_model.append_relationship(entity.name, model_name, entity.optional)
 
         self._entities_stack.append(entity)
         self._entities_raw_models[entity.type] = RawModel(
@@ -77,13 +77,13 @@ class ModelConstructingVisitor(Visitor):
     def visit_value_object(self, value_object: ValueObjectNode) -> None:
         # value objects' fields are embedded into entity above it
         self._prefix = f"{value_object.name}_"
-        if not self._last_nullable_vo_node and value_object.nullable:
-            self._last_nullable_vo_node = value_object
+        if not self._last_optional_vo_node and value_object.optional:
+            self._last_optional_vo_node = value_object
 
     def leave_value_object(self, value_object: ValueObjectNode) -> None:
         self._prefix = self.EMPTY_PREFIX
-        if self._last_nullable_vo_node == value_object:
-            self._last_nullable_vo_node = None
+        if self._last_optional_vo_node == value_object:
+            self._last_optional_vo_node = None
 
     def visit_list_of_entities(self, list_of_entities: ListOfEntitiesNode) -> None:
         raise NotImplementedError

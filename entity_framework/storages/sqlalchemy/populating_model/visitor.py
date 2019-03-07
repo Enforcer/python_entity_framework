@@ -35,7 +35,7 @@ class ModelPopulatingVisitor(Visitor):
         else:
             field_name = f"{self._prefix}{field.name}"
 
-        if self._complex_objects_stack[-1]:  # may be none if nullable
+        if self._complex_objects_stack[-1]:  # may be none if optional
             self._models_dicts_stack[-1][field_name] = getattr(self._complex_objects_stack[-1], field.name)
 
     def visit_entity(self, entity: EntityNode) -> None:
@@ -68,8 +68,8 @@ class ModelPopulatingVisitor(Visitor):
     def _construct_model(self, entity: EntityNode) -> None:
         self._ef_objects_stack.pop()
         entity_dict = self._models_dicts_stack.pop()
-        if entity.nullable and entity_dict and all(v is None for v in entity_dict.values()):
-            # One is not able to tell the difference between nullable object with all its fields = None or
+        if entity.optional and entity_dict and all(v is None for v in entity_dict.values()):
+            # One is not able to tell the difference between optional object with all its fields = None or
             # an absence of entire vo_or_entity
             instance = None
         else:

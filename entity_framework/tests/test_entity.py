@@ -70,7 +70,7 @@ def test_entity_can_not_be_nested_inside_vo():
             person: Human
 
 
-def test_nullable_entity_can_not_be_nested_inside_vo():
+def test_optional_entity_can_not_be_nested_inside_vo():
     class Person(Entity):
         id: Identity[int]
         name: str

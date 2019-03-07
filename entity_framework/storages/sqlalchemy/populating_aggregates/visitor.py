@@ -14,7 +14,6 @@ class PopulatingAggregateVisitor(Visitor):
     EMPTY_PREFIX = ""
 
     def __init__(self, db_result: object) -> None:
-        # TODO: this probably won't work with nullable's
         self._db_result = db_result
         self._prefix = self.EMPTY_PREFIX
         self._entities_stack: typing.List[EntityNode] = []
@@ -62,8 +61,8 @@ class PopulatingAggregateVisitor(Visitor):
     def _construct_complex_object(self, vo_or_entity: typing.Union[ValueObjectNode, EntityNode]) -> None:
         self._ef_objects_stack.pop()
         entity_dict = self._ef_dicts_stack.pop()
-        if vo_or_entity.nullable and entity_dict and all(v is None for v in entity_dict.values()):
-            # One is not able to tell the difference between nullable object with all its fields = None or
+        if vo_or_entity.optional and entity_dict and all(v is None for v in entity_dict.values()):
+            # One is not able to tell the difference between optional object with all its fields = None or
             # an absence of entire vo_or_entity
             instance = None
         else:
