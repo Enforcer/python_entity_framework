@@ -4,7 +4,6 @@ from sqlalchemy.orm import Session, Query, exc
 from sqlalchemy.ext.declarative import DeclarativeMeta
 
 from entity_framework.repository import EntityType, IdentityType
-from entity_framework.storages.sqlalchemy import native_type_to_column, types
 from entity_framework.storages.sqlalchemy.populating_aggregates.visitor import PopulatingAggregateVisitor
 from entity_framework.storages.sqlalchemy.constructing_model.visitor import ModelConstructingVisitor
 from entity_framework.storages.sqlalchemy.populating_model.visitor import ModelPopulatingVisitor

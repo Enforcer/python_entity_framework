@@ -2,8 +2,7 @@ import abc
 import inspect
 import typing
 
-from entity_framework.abstract_entity_tree import AbstractEntityTree, build
-from entity_framework.entity import EntityOrVoType
+from entity_framework.abstract_entity_tree import build
 from entity_framework.registry import Registry
 
 

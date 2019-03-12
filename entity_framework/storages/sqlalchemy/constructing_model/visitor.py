@@ -48,9 +48,7 @@ class ModelConstructingVisitor(Visitor):
         table_name = inflection.pluralize(inflection.underscore(entity.type.__name__))
 
         if self._entities_stack:  # nested, include foreign key
-            identity_nodes: typing.List[FieldNode] = [
-                node for node in entity.children if getattr(node, "is_identity", None)
-            ]
+            identity_nodes: List[FieldNode] = [node for node in entity.children if getattr(node, "is_identity", None)]
             assert len(identity_nodes) == 1, "Multiple primary keys not supported"
             identity_node = identity_nodes.pop()
             raw_model: RawModel = self._entities_raw_models[self.current_entity.type]
