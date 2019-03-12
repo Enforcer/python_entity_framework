@@ -1,9 +1,8 @@
-from typing import Optional, Generator, Union, Type, List, Dict
+from typing import Optional, Union, Type, List, Dict
 
 import pytest
-from sqlalchemy.engine import Engine
-from sqlalchemy.orm import sessionmaker, Session
-from sqlalchemy.ext.declarative import DeclarativeMeta, declarative_base
+from sqlalchemy.orm import Session
+from sqlalchemy.ext.declarative import DeclarativeMeta
 
 from entity_framework import Entity, Identity, ValueObject, Repository
 from entity_framework.storages.sqlalchemy import SqlAlchemyRepo
@@ -41,27 +40,12 @@ SubscriberRepo = Repository[Subscriber, SubscriberId]
 
 
 @pytest.fixture()
-def sa_base() -> DeclarativeMeta:
-    return declarative_base()
-
-
-@pytest.fixture()
 def sa_repo(sa_base: DeclarativeMeta) -> Type[Union[SqlAlchemyRepo, SubscriberRepo]]:
     class SqlSubscriberRepo(SqlAlchemyRepo, SubscriberRepo):
         base = sa_base
         registry = SaRegistry()
 
     return SqlSubscriberRepo
-
-
-@pytest.fixture()
-def session(sa_base: DeclarativeMeta, engine: Engine) -> Generator[Session, None, None]:
-    sa_base.metadata.drop_all(engine)
-    sa_base.metadata.create_all(engine)
-    session_factory = sessionmaker(engine)
-    yield session_factory()
-    session_factory.close_all()
-    sa_base.metadata.drop_all(engine)
 
 
 @pytest.mark.parametrize(
