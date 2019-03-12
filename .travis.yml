@@ -1,0 +1,17 @@
+language: python
+python:
+  - "3.6"
+  - "3.7-dev"
+services:
+  - postgresql
+addons:
+  postgresql: "10"
+before_script:
+  - psql -c 'create database travis_ci_test;' -U postgres
+install:
+  - pip install -r requirements.txt
+script:
+  - black --check -l 120 ./entity_framework/
+  - flake8 --max-line-length 120 ./entity_framework/
+  - pytest --sqlalchemy-postgres-url="postgresql://postgres:@localhost:5432/travis_ci_test" entity_framework/tests/
+
