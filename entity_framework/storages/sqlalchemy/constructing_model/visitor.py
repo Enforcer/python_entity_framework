@@ -26,8 +26,14 @@ class ModelConstructingVisitor(Visitor):
         self._registry = registry
         self._entities_stack: List[EntityNode] = []
         self._entities_raw_models: Dict[Type[Entity], RawModel] = {}
-        self._prefix = self.EMPTY_PREFIX
         self._last_optional_vo_node: Optional[ValueObjectNode] = None
+        self._stacked_vo: List[ValueObjectNode] = []
+
+    @property
+    def _prefix(self) -> str:
+        if not self._stacked_vo:
+            return self.EMPTY_PREFIX
+        return "_".join(vo.name for vo in self._stacked_vo) + "_"
 
     @property
     def current_entity(self) -> EntityNode:
@@ -74,12 +80,12 @@ class ModelConstructingVisitor(Visitor):
 
     def visit_value_object(self, value_object: ValueObjectNode) -> None:
         # value objects' fields are embedded into entity above it
-        self._prefix = f"{value_object.name}_"
+        self._stacked_vo.append(value_object)
         if not self._last_optional_vo_node and value_object.optional:
             self._last_optional_vo_node = value_object
 
     def leave_value_object(self, value_object: ValueObjectNode) -> None:
-        self._prefix = self.EMPTY_PREFIX
+        self._stacked_vo.pop()
         if self._last_optional_vo_node == value_object:
             self._last_optional_vo_node = None
 

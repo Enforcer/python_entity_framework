@@ -1,4 +1,4 @@
-import typing
+from typing import List, Any, Union
 
 from entity_framework.abstract_entity_tree import (
     Visitor,
@@ -15,14 +15,20 @@ class PopulatingAggregateVisitor(Visitor):
 
     def __init__(self, db_result: object) -> None:
         self._db_result = db_result
-        self._prefix = self.EMPTY_PREFIX
-        self._entities_stack: typing.List[EntityNode] = []
-        self._ef_objects_stack: typing.List[typing.Union[EntityNode, ValueObjectNode]] = []
-        self._ef_dicts_stack: typing.List[dict] = []
-        self._result: typing.Any = None
+        self._entities_stack: List[EntityNode] = []
+        self._ef_objects_stack: List[Union[EntityNode, ValueObjectNode]] = []
+        self._ef_dicts_stack: List[dict] = []
+        self._result: Any = None
+        self._stacked_vo: List[ValueObjectNode] = []
 
     @property
-    def result(self) -> typing.Any:
+    def _prefix(self) -> str:
+        if not self._stacked_vo:
+            return self.EMPTY_PREFIX
+        return "_".join(vo.name for vo in self._stacked_vo) + "_"
+
+    @property
+    def result(self) -> Any:
         return self._result
 
     def visit_field(self, field: FieldNode) -> None:
@@ -47,18 +53,18 @@ class PopulatingAggregateVisitor(Visitor):
         self._construct_complex_object(entity)
 
     def visit_value_object(self, value_object: ValueObjectNode) -> None:
-        self._prefix = f"{value_object.name}_"
+        self._stacked_vo.append(value_object)
         self._stack_complex_object(value_object)
 
     def leave_value_object(self, value_object: ValueObjectNode) -> None:
-        self._prefix = self.EMPTY_PREFIX
+        self._stacked_vo.pop()
         self._construct_complex_object(value_object)
 
-    def _stack_complex_object(self, vo_or_entity: typing.Union[ValueObjectNode, EntityNode]) -> None:
+    def _stack_complex_object(self, vo_or_entity: Union[ValueObjectNode, EntityNode]) -> None:
         self._ef_objects_stack.append(vo_or_entity)
         self._ef_dicts_stack.append({})
 
-    def _construct_complex_object(self, vo_or_entity: typing.Union[ValueObjectNode, EntityNode]) -> None:
+    def _construct_complex_object(self, vo_or_entity: Union[ValueObjectNode, EntityNode]) -> None:
         self._ef_objects_stack.pop()
         entity_dict = self._ef_dicts_stack.pop()
         if vo_or_entity.optional and entity_dict and all(v is None for v in entity_dict.values()):

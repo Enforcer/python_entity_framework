@@ -1,4 +1,4 @@
-import typing
+from typing import Optional, Type
 
 from sqlalchemy.orm import Session, Query, exc
 from sqlalchemy.ext.declarative import DeclarativeMeta
@@ -15,13 +15,13 @@ class SqlAlchemyRepo:
     base: DeclarativeMeta = None
     registry: SaRegistry = None
 
-    _query: typing.Optional[Query] = None
+    _query: Optional[Query] = None
 
     def __init__(self, session: Session) -> None:
         self._session = session
 
     @classmethod
-    def prepare(cls, entity_cls: typing.Type[EntityType]) -> None:
+    def prepare(cls, entity_cls: Type[EntityType]) -> None:
         assert cls.base, "Must set cls base to an instance of DeclarativeMeta!"
         if not getattr(cls, "entity", None):
             cls.entity = entity_cls
@@ -30,13 +30,13 @@ class SqlAlchemyRepo:
 
     @property
     def query(self) -> Query:
-        if not SqlAlchemyRepo._query:
+        if not getattr(self.__class__, "_query", None):
             aet = self.registry.entities_to_aets[self.entity]
             visitor = QueryBuildingVisitor(self.registry)
             visitor.traverse_from(aet.root)
-            SqlAlchemyRepo._query = visitor.query
+            setattr(self.__class__, "_query", visitor.query)
 
-        return SqlAlchemyRepo._query
+        return self.__class__._query
 
     # TODO: sqlalchemy class could have an utility for creating IDS
     # Or it could be put into a separate utility function that would accept repo, then would get descendant classes
